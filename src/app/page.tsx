@@ -3,22 +3,21 @@ import { headers } from "next/headers";
 async function getIpDetails() {
   const headersList = await headers();
   const clientIP = headersList.get("x-client-ip") || "Unknown";
-  const cfIP = headersList.get("x-cf-ip") || "Unknown";
-
-  let ipToCheck = cfIP !== "Unknown" ? cfIP : clientIP;
-
-  try {
-    const response = await fetch(`https://ipapi.co/${ipToCheck}/json/`);
-    const data = await response.json();
-    return {
-      ...data,
-      clientIP,
-      cfIP,
-    };
-  } catch (error) {
-    console.error("Error fetching IP details:", error);
-    return { error: "Could not fetch IP details", clientIP, cfIP };
+  const cachedDetails = headersList.get("x-ip-details");
+  
+  if (cachedDetails) {
+    try {
+      return { ...JSON.parse(cachedDetails), clientIP };
+    } catch (e) {
+      console.error("Error parsing cached IP details:", e);
+    }
   }
+  
+  return { 
+    ip: clientIP,
+    error: "IP details not available",
+    clientIP 
+  };
 }
 
 export default async function Home() {

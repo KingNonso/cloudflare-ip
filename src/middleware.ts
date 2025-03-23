@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getIpDetails } from './lib/ipParser'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
   
-  // Get original client IP (IPv4 or IPv6)
-  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'Unknown'
-
-  // Get Cloudflare IP (should match clientIP if no proxy)
-  const cfIP = request.headers.get('CF-Connecting-IP') || 'Unknown'
-
-  // Log IPs
-  console.log('Client IP:', clientIP)
-  console.log('Cloudflare IP:', cfIP)
+  const realIP = request.headers.get('x-real-ip')
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0].trim()
+  const clientIP = realIP || forwardedFor || request.ip || 'Unknown'
   
-  // Add headers for client-side access
-  response.headers.set('x-client-ip', clientIP)
-  response.headers.set('x-cf-ip', cfIP)
+  // Clean IPv6 format
+  const cleanIP = clientIP.replace(/^::ffff:/, '')
+  
+  if (cleanIP !== 'Unknown' && cleanIP !== '::1') {
+    const details = await getIpDetails(cleanIP)
+    response.headers.set('x-ip-details', JSON.stringify(details))
+  }
+  
+  response.headers.set('x-client-ip', cleanIP)
   
   return response
 }
