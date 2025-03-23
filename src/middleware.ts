@@ -4,16 +4,17 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const response = NextResponse.next()
   
-  // Get IP addresses
-  const clientIP = request.headers.get('x-forwarded-for') || 'Unknown'
+  // Get original client IP (IPv4 or IPv6)
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'Unknown'
+
+  // Get Cloudflare IP (should match clientIP if no proxy)
   const cfIP = request.headers.get('CF-Connecting-IP') || 'Unknown'
 
-    // Log IP addresses
-    console.log('Client IP:', clientIP)
-    console.log('Cloudflare IP:', cfIP)
-  // Set IP addresses in headers
+  // Log IPs
+  console.log('Client IP:', clientIP)
+  console.log('Cloudflare IP:', cfIP)
   
-  // Add custom headers
+  // Add headers for client-side access
   response.headers.set('x-client-ip', clientIP)
   response.headers.set('x-cf-ip', cfIP)
   
