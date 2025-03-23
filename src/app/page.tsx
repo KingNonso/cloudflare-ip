@@ -8,6 +8,7 @@ async function getIpDetails() {
     const response = await fetch(`https://ipapi.co/${ip}/json/`);
     return await response.json();
   } catch (error) {
+    console.error("Error fetching IP details:", error);
     return { error: "Could not fetch IP details" };
   }
 }
